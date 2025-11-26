@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYFR - P2P Network</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    :root {
+      --bg: #06060a;
+      --surface: rgba(255, 255, 255, 0.02);
+      --border: rgba(0, 255, 136, 0.15);
+      --accent: #00ff88;
+      --accent-dim: rgba(0, 255, 136, 0.3);
+      --danger: #ff3366;
+      --warning: #ffaa00;
+      --text: #e0e0e0;
+      --text-dim: rgba(255, 255, 255, 0.4);
+    }
+    
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    /* Glow effect */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 10%;
+      left: 5%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(0, 255, 136, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    /* Login screen */
+    .login-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      background: var(--bg);
+    }
+    
+    .login-screen.hidden {
+      display: none;
+    }
+    
+    .login-box {
+      width: 100%;
+      max-width: 400px;
+      padding: 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    
+    .logo {
+      width: 60px;
+      height: 60px;
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+    
+    .logo svg {
+      stroke: var(--accent);
+    }
+    
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      color: var(--accent);
+      letter-spacing: 6px;
+      text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+      margin-bottom: 8px;
+    }
+    
+    .subtitle {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 3px;
+      margin-bottom: 32px;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .input-group label {
+      display: block;
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    
+    .input-group input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    
+    .input-group input:focus {
+      border-color: var(--accent);
+      background: rgba(0, 255, 136, 0.05);
+    }
+    
+    .btn {
+      padding: 14px 28px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, #00cc6a 100%);
+      color: var(--bg);
+      width: 100%;
+    }
+    
+    .btn-primary:hover {
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.4);
+    }
+    
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(0, 255, 136, 0.1);
+    }
+    
+    /* Main app */
+    .app {
+      display: none;
+      height: 100vh;
+    }
+    
+    .app.active {
+      display: flex;
+    }
+    
+    /* Header */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(6, 6, 10, 0.95);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .header-logo {
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .header-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 16px;
+      color: var(--accent);
+      letter-spacing: 4px;
+    }
+    
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+      animation: pulse 2s infinite;
+    }
+    
+    .status-dot.disconnected {
+      background: var(--danger);
+      box-shadow: 0 0 10px var(--danger);
+      animation: none;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* Main content */
+    .main-content {
+      display: flex;
+      margin-top: 60px;
+      height: calc(100vh - 60px);
+      width: 100%;
+    }
+    
+    /* Sidebar - Peer list */
+    .sidebar {
+      width: 280px;
+      border-right: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .sidebar-title {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    
+    .peer-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    
+    .peer-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+    }
+    
+    .peer-item:hover {
+      background: var(--surface);
+      border-color: var(--border);
+    }
+    
+    .peer-item.selected {
+      background: rgba(0, 255, 136, 0.1);
+      border-color: var(--accent-dim);
+    }
+    
+    .peer-avatar {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, transparent 100%);
+      border: 1px solid var(--accent-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: var(--accent);
+    }
+    
+    .peer-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .peer-name {
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .peer-status {
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .empty-peers {
+      padding: 32px 16px;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 12px;
+    }
+    
+    /* Chat area */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .chat-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .chat-title {
+      font-size: 14px;
+      color: var(--text);
+    }
+    
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .message {
+      max-width: 70%;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .message.own {
+      align-self: flex-end;
+    }
+    
+    .message.other {
+      align-self: flex-start;
+    }
+    
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    
+    .message-sender {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    
+    .message-time {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    
+    .message-content {
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    
+    .message.own .message-content {
+      background: rgba(0, 255, 136, 0.1);
+      border-color: var(--accent-dim);
+    }
+    
+    .message.system {
+      align-self: center;
+      max-width: 100%;
+    }
+    
+    .message.system .message-content {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 11px;
+      text-align: center;
+      padding: 8px;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Chat input */
+    .chat-input-area {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+    }
+    
+    .chat-input {
+      flex: 1;
+      padding: 14px 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    
+    .chat-input:focus {
+      border-color: var(--accent);
+    }
+    
+    .chat-input::placeholder {
+      color: var(--text-dim);
+    }
+    
+    .send-btn {
+      width: 50px;
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    
+    .send-btn:hover {
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+    }
+    
+    .send-btn svg {
+      stroke: var(--bg);
+    }
+    
+    /* File transfer panel */
+    .transfer-panel {
+      width: 300px;
+      border-left: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .transfer-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .transfer-title {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    
+    .drop-zone {
+      margin: 16px;
+      padding: 32px;
+      border: 2px dashed var(--border);
+      text-align: center;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(0, 255, 136, 0.05);
+    }
+    
+    .drop-zone svg {
+      stroke: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    
+    .drop-zone p {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+    
+    .transfer-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px;
+    }
+    
+    .transfer-item {
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    
+    .transfer-filename {
+      font-size: 12px;
+      color: var(--text);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .transfer-info {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+    
+    .progress-bar {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #00cc6a);
+      box-shadow: 0 0 10px var(--accent);
+      transition: width 0.3s;
+    }
+    
+    /* Your peer ID display */
+    .your-id {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+    
+    .your-id-label {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    
+    .your-id-value {
+      font-size: 13px;
+      color: var(--accent);
+      word-break: break-all;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: var(--accent-dim);
+    }
+    
+    /* Responsive */
+    @media (max-width: 900px) {
+      .transfer-panel {
+        display: none;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      .sidebar {
+        width: 70px;
+      }
+      
+      .peer-info, .sidebar-title, .your-id {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-box">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke-width="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 1v4M12 19v4M1 12h4M19 12h4" />
+          <path d="M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+        </svg>
+      </div>
+      <h1>CYFR</h1>
+      <p class="subtitle">P2P NETWORK</p>
+      
+      <div class="input-group">
+        <label>Username</label>
+        <input type="text" id="usernameInput" placeholder="Enter your username" maxlength="20">
+      </div>
+      
+      <button class="btn btn-primary" id="joinBtn">Connect to Network</button>
+      
+      <p style="margin-top: 24px; font-size: 11px; color: var(--text-dim);">
+        Connect with peers worldwide via WebRTC
+      </p>
+    </div>
+  </div>
+  
+  <!-- Main App -->
+  <div class="app" id="app">
+    <header>
+      <div class="header-left">
+        <div class="header-logo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 1v4M12 19v4M1 12h4M19 12h4" />
+          </svg>
+        </div>
+        <span class="header-title">CYFR</span>
+      </div>
+      <div class="header-right">
+        <div class="connection-status">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Connected</span>
+        </div>
+        <span id="usernameDisplay" style="color: var(--accent); font-size: 13px;"></span>
+      </div>
+    </header>
+    
+    <div class="main-content">
+      <!-- Peer List Sidebar -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <span class="sidebar-title">Online Peers (<span id="peerCount">0</span>)</span>
+        </div>
+        <div class="peer-list" id="peerList">
+          <div class="empty-peers">No peers connected yet.<br>Share your server URL!</div>
+        </div>
+        <div class="your-id">
+          <div class="your-id-label">YOUR PEER ID</div>
+          <div class="your-id-value" id="yourPeerId">Connecting...</div>
+        </div>
+      </div>
+      
+      <!-- Chat Area -->
+      <div class="chat-area">
+        <div class="chat-header">
+          <span class="chat-title">Global Chat</span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="message system">
+            <div class="message-content">Welcome to CYFR P2P Network</div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input type="text" class="chat-input" id="chatInput" placeholder="Type a message..." maxlength="500">
+          <button class="send-btn" id="sendBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2">
+              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- File Transfer Panel -->
+      <div class="transfer-panel">
+        <div class="transfer-header">
+          <span class="transfer-title">File Transfer</span>
+        </div>
+        <div class="drop-zone" id="dropZone">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+          </svg>
+          <p>Drop files to share<br>or click to browse</p>
+          <input type="file" id="fileInput" style="display: none" multiple>
+        </div>
+        <div class="transfer-list" id="transferList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="client.js"></script>
+</body>
+</html>
