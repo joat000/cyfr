@@ -2,7 +2,7 @@ app = "cyfr-p2p"
 primary_region = "sjc"
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = "DOCKERFILE"
 
 [http_service]
 auto_start_machines = true
